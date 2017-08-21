@@ -6,77 +6,61 @@ import (
 	termbox "github.com/nsf/termbox-go"
 	"github.com/sparkymat/others/app/mode"
 	"github.com/sparkymat/others/event"
-	"github.com/sparkymat/others/widget"
+	"github.com/sparkymat/others/view"
 	"github.com/sparkymat/spartan"
 	"github.com/sparkymat/spartan/direction"
 	"github.com/sparkymat/spartan/size"
 )
 
 type OthersApp struct {
-	commandArea         widget.CommandArea
-	contentArea         widget.ContentArea
+	menu                view.Menu
 	eventHandlerChannel chan termbox.Event
 	mainLayout          spartan.LinearLayout
 	spartanApp          spartan.App
-	statusBar           widget.StatusBar
 	mode                mode.Mode
 	ticker              *time.Ticker
 }
 
 func New() *OthersApp {
-	sa := OthersApp{}
+	othersApp := OthersApp{}
 
-	sa.spartanApp = spartan.New()
+	othersApp.spartanApp = spartan.New()
 
-	sa.eventHandlerChannel = make(chan termbox.Event)
-	sa.mode = mode.Menu
+	othersApp.eventHandlerChannel = make(chan termbox.Event)
+	othersApp.mode = mode.Menu
 
-	sa.mainLayout = spartan.LinearLayout{}
-	sa.mainLayout.Direction = direction.Vertical
-	sa.mainLayout.Width = size.MatchParent
-	sa.mainLayout.Height = size.MatchParent
+	othersApp.mainLayout = spartan.LinearLayout{}
+	othersApp.mainLayout.Direction = direction.Vertical
+	othersApp.mainLayout.Width = size.MatchParent
+	othersApp.mainLayout.Height = size.MatchParent
 
-	sa.contentArea = widget.ContentArea{}
-	sa.contentArea.Width = size.MatchParent
-	sa.contentArea.Height = size.MatchParent
-	sa.mainLayout.AddChild(&sa.contentArea)
+	othersApp.menu = view.Menu{}
+	othersApp.menu.Width = size.MatchParent
+	othersApp.menu.Height = size.MatchParent
+	othersApp.mainLayout.AddChild(&othersApp.menu)
 
-	sa.statusBar = widget.StatusBar{}
-	sa.statusBar.Width = size.MatchParent
-	sa.statusBar.Height = 1
-	sa.statusBar.BackgroundColor = termbox.ColorBlue
-	sa.statusBar.ForegroundColor = termbox.ColorWhite | termbox.AttrBold
-	sa.mainLayout.AddChild(&sa.statusBar)
+	othersApp.spartanApp.SetContent(othersApp.mainLayout)
 
-	sa.commandArea = widget.CommandArea{}
-	sa.commandArea.Width = size.MatchParent
-	sa.commandArea.Height = 3
-	sa.mainLayout.AddChild(&sa.commandArea)
+	othersApp.ticker = time.NewTicker(time.Millisecond * 200)
 
-	sa.spartanApp.SetContent(sa.mainLayout)
-
-	sa.ticker = time.NewTicker(time.Millisecond * 200)
-
-	return &sa
+	return &othersApp
 }
 
-func (sa *OthersApp) Run() {
-	go event.Handler(sa.eventHandlerChannel)
+func (othersApp *OthersApp) Run() {
+	go event.Handler(othersApp.eventHandlerChannel)
 	go func() {
-		for _ = range sa.ticker.C {
-			sa.OnTick()
+		for _ = range othersApp.ticker.C {
+			othersApp.OnTick()
 		}
 	}()
 
-	sa.spartanApp.Run(sa.eventHandlerChannel)
+	othersApp.spartanApp.Run(othersApp.eventHandlerChannel)
 }
 
-func (sa *OthersApp) CleanupForTermination() {
-	sa.ticker.Stop()
+func (othersApp *OthersApp) CleanupForTermination() {
+	othersApp.ticker.Stop()
 }
 
-func (sa *OthersApp) OnTick() {
-	sa.contentArea.OnTick()
-	sa.statusBar.OnTick()
-	sa.commandArea.OnTick()
+func (othersApp *OthersApp) OnTick() {
+	othersApp.menu.OnTick()
 }
